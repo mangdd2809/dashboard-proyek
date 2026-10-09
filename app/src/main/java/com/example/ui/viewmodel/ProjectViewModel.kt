@@ -24,9 +24,11 @@ import kotlinx.coroutines.launch
 enum class AppNavScreen {
     DASHBOARD,
     LAPORAN,
+    RAB_EXPLORER,
     TELEGRAM_HUB,
     AI_ANALYSIS,
     PROYEK,
+    MANAJEMEN_USER,
     ARMBIAN_SYNC
 }
 
@@ -80,6 +82,12 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val aiAnalyses: StateFlow<List<AIAnalysisEntity>> = repository.allAiAnalyses
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val users: StateFlow<List<com.example.data.local.entity.AppUserEntity>> = repository.allUsers
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val rabItems: StateFlow<List<com.example.data.local.entity.RabItemEntity>> = repository.allRabItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Filtered Materials Flow
@@ -319,6 +327,137 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                 _statusMessage.value = "Proyek '$name' berhasil ditambahkan!"
             } catch (e: Exception) {
                 _statusMessage.value = "Gagal menambah proyek: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun updateProject(project: ProjectEntity) {
+        viewModelScope.launch {
+            try {
+                repository.updateProject(project)
+                _statusMessage.value = "Proyek '${project.name}' berhasil diperbarui!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal mengubah proyek: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun deleteProject(project: ProjectEntity) {
+        viewModelScope.launch {
+            try {
+                repository.deleteProject(project)
+                if (_selectedProjectId.value == project.id) {
+                    _selectedProjectId.value = null
+                }
+                _statusMessage.value = "Proyek '${project.name}' berhasil dihapus!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal menghapus proyek: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    // --- USER CRUD ---
+    fun createUser(
+        username: String,
+        fullName: String,
+        role: String,
+        email: String,
+        phone: String,
+        assignedProject: String
+    ) {
+        viewModelScope.launch {
+            try {
+                repository.insertUser(
+                    com.example.data.local.entity.AppUserEntity(
+                        username = username,
+                        fullName = fullName,
+                        role = role,
+                        email = email,
+                        phone = phone,
+                        assignedProject = assignedProject
+                    )
+                )
+                _statusMessage.value = "User '$fullName' ($role) berhasil didaftarkan!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal menambah user: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun updateUser(user: com.example.data.local.entity.AppUserEntity) {
+        viewModelScope.launch {
+            try {
+                repository.updateUser(user)
+                _statusMessage.value = "Data user '${user.fullName}' diperbarui!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal update user: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun deleteUser(user: com.example.data.local.entity.AppUserEntity) {
+        viewModelScope.launch {
+            try {
+                repository.deleteUser(user)
+                _statusMessage.value = "User '${user.fullName}' berhasil dihapus!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal hapus user: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    // --- RAB ITEM CRUD ---
+    fun addRabItem(
+        projectId: Long,
+        floor: String,
+        catCode: String,
+        catName: String,
+        desc: String,
+        volume: Double,
+        unit: String,
+        price: Double
+    ) {
+        viewModelScope.launch {
+            try {
+                val total = volume * price
+                repository.insertRabItem(
+                    com.example.data.local.entity.RabItemEntity(
+                        projectId = projectId,
+                        floorLevel = floor,
+                        categoryCode = catCode,
+                        categoryName = catName,
+                        workDescription = desc,
+                        volume = volume,
+                        unit = unit,
+                        unitPrice = price,
+                        totalPrice = total
+                    )
+                )
+                _statusMessage.value = "Item RAB '$desc' berhasil ditambahkan!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal menambah RAB: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun updateRabItem(item: com.example.data.local.entity.RabItemEntity) {
+        viewModelScope.launch {
+            try {
+                repository.updateRabItem(item)
+                _statusMessage.value = "Item RAB diperbarui!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal update RAB: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun deleteRabItem(item: com.example.data.local.entity.RabItemEntity) {
+        viewModelScope.launch {
+            try {
+                repository.deleteRabItem(item)
+                _statusMessage.value = "Item RAB dihapus!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Gagal hapus RAB: ${e.localizedMessage}"
             }
         }
     }

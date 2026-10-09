@@ -1,8 +1,11 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,19 +44,37 @@ fun DashboardScreen(
     val materials by viewModel.filteredMaterials.collectAsState()
     val laborWages by viewModel.filteredLaborWages.collectAsState()
 
+    val activeProject = remember(projects, selectedProjId) {
+        projects.firstOrNull { it.id == selectedProjId }
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .testTag("dashboard_screen"),
         contentPadding = PaddingValues(bottom = 96.dp)
     ) {
-        // Top Project Filter Chips
+        // Project Quick-Switcher Vertical Selector Card
         item {
-            ProjectSelectorChipRow(
+            ProjectSelectorVerticalList(
                 projects = projects,
                 selectedProjectId = selectedProjId,
                 onSelectProject = { viewModel.selectProject(it) }
             )
+        }
+
+        // Hero Architectural Overview Card
+        item {
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                HeroProjectBanner(
+                    project = activeProject,
+                    totalProjectsCount = projects.size,
+                    kpiOverallCost = kpi.totalOverallCost,
+                    kpiRAB = kpi.totalRAB,
+                    avgProgress = kpi.avgProgressPercent
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
         }
 
         // Period Filter Chips
@@ -62,14 +83,29 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                DatePeriodFilter.values().forEach { period ->
-                    FilterChip(
-                        selected = selectedPeriod == period,
-                        onClick = { viewModel.setPeriodFilter(period) },
-                        label = { Text(period.label, fontSize = 12.sp) },
-                        modifier = Modifier.testTag("period_chip_${period.name.lowercase()}")
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DatePeriodFilter.values().forEach { period ->
+                        FilterChip(
+                            selected = selectedPeriod == period,
+                            onClick = { viewModel.setPeriodFilter(period) },
+                            label = { Text(period.label, fontSize = 12.sp, fontWeight = if (selectedPeriod == period) FontWeight.Bold else FontWeight.Normal) },
+                            modifier = Modifier.testTag("period_chip_${period.name.lowercase()}")
+                        )
+                    }
+                }
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "${materials.size + laborWages.size} Catatan",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -91,21 +127,21 @@ fun DashboardScreen(
                     KpiStatCard(
                         title = "Biaya Material",
                         value = formatRupiah(kpi.totalMaterialCost),
-                        subtitle = "${kpi.totalMaterialItems} transaksi material",
+                        subtitle = "${kpi.totalMaterialItems} transaksi pengadaan",
                         icon = Icons.Default.Category,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        iconBgColor = Color(0xFF3B82F6).copy(alpha = 0.15f),
                         modifier = Modifier.weight(1f)
                     )
                     KpiStatCard(
-                        title = "Upah Tenaga Kerja",
+                        title = "Upah Pekerja",
                         value = formatRupiah(kpi.totalLaborCost),
-                        subtitle = "${kpi.totalWorkerCount} total pekerja/HOK",
+                        subtitle = "${kpi.totalWorkerCount} tenaga kerja terdata",
                         icon = Icons.Default.Engineering,
-                        containerColor = SecondaryContainerLight,
-                        contentColor = OnSecondaryContainerLight,
-                        iconBgColor = SecondaryLight.copy(alpha = 0.2f),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        iconBgColor = SafetyAmber.copy(alpha = 0.2f),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -115,9 +151,9 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     KpiStatCard(
-                        title = "Total Pengeluaran",
+                        title = "Akumulasi Biaya",
                         value = formatRupiah(kpi.totalOverallCost),
-                        subtitle = "Akumulasi material & upah",
+                        subtitle = "Realisasi pengeluaran total",
                         icon = Icons.Default.AccountBalanceWallet,
                         containerColor = BlueprintNavy,
                         contentColor = Color.White,
@@ -125,13 +161,13 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f)
                     )
                     KpiStatCard(
-                        title = "Progress Fisik",
+                        title = "Progress Bangunan",
                         value = "${String.format("%.1f", kpi.avgProgressPercent)}%",
-                        subtitle = "Rata-rata progres proyek",
+                        subtitle = "Verifikasi fisik lapangan",
                         icon = Icons.AutoMirrored.Filled.TrendingUp,
-                        containerColor = TertiaryContainerLight,
-                        contentColor = OnTertiaryContainerLight,
-                        iconBgColor = SuccessGreen.copy(alpha = 0.3f),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        iconBgColor = SuccessGreen.copy(alpha = 0.2f),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -139,23 +175,23 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Budget Realization vs RAB
+        // Segmented Budget Breakdown Card
         item {
             Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                BudgetProgressBar(
-                    rab = kpi.totalRAB,
-                    actualCost = kpi.totalOverallCost,
-                    progressPercent = kpi.avgProgressPercent
+                SegmentedBudgetBar(
+                    totalRAB = kpi.totalRAB,
+                    materialCost = kpi.totalMaterialCost,
+                    laborCost = kpi.totalLaborCost
                 )
             }
             Spacer(modifier = Modifier.height(18.dp))
         }
 
-        // Quick Actions Row
+        // Quick Actions Dock
         item {
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
-                    text = "Aksi Cepat Mandor & AI",
+                    text = "Aksi Operasional Cepat",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -164,66 +200,125 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ElevatedButton(
-                        onClick = { viewModel.setNavScreen(AppNavScreen.TELEGRAM_HUB) },
+                    // Telegram AI
+                    Card(
                         modifier = Modifier
                             .weight(1f)
+                            .clickable { viewModel.setNavScreen(AppNavScreen.TELEGRAM_HUB) }
                             .testTag("quick_telegram_button"),
-                        colors = ButtonDefaults.elevatedButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White
-                        ),
-                        contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = BlueprintNavy),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.SmartToy, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("AI Telegram", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp, horizontal = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(InfoSky),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.SmartToy, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Telegram AI", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    ElevatedButton(
-                        onClick = onOpenAddMaterial,
+                    // + Material
+                    Card(
                         modifier = Modifier
                             .weight(1f)
+                            .clickable { onOpenAddMaterial() }
                             .testTag("quick_material_button"),
-                        contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp, horizontal = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF3B82F6).copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.AddShoppingCart, contentDescription = null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text("+ Material", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    ElevatedButton(
-                        onClick = onOpenAddLabor,
+                    // + Upah
+                    Card(
                         modifier = Modifier
                             .weight(1f)
+                            .clickable { onOpenAddLabor() }
                             .testTag("quick_labor_button"),
-                        contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp, horizontal = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(SafetyAmber.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.GroupAdd, contentDescription = null, tint = SafetyAmberDark, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text("+ Upah", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    ElevatedButton(
-                        onClick = { viewModel.setNavScreen(AppNavScreen.AI_ANALYSIS) },
+                    // Analisa AI
+                    Card(
                         modifier = Modifier
                             .weight(1f)
+                            .clickable { viewModel.setNavScreen(AppNavScreen.AI_ANALYSIS) }
                             .testTag("quick_ai_analysis_button"),
-                        colors = ButtonDefaults.elevatedButtonColors(
-                            containerColor = SafetyAmberDark,
-                            contentColor = Color.White
-                        ),
-                        contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.Analytics, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp, horizontal = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(VioletAccent.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Psychology, contentDescription = null, tint = VioletAccent, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text("Analisa AI", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
@@ -242,70 +337,81 @@ fun DashboardScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Aktivitas Rekap Terbaru",
+                    text = "Aktivitas Pengeluaran Lapangan",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 TextButton(onClick = { viewModel.setNavScreen(AppNavScreen.LAPORAN) }) {
-                    Text("Lihat Semua Rekap", fontSize = 12.sp)
+                    Text("Buka Laporan Penuh", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             Spacer(modifier = Modifier.height(6.dp))
         }
 
-        // Combined Recent items (Latest 6 items)
+        // Combined Recent items
         val recentMaterials = materials.take(4)
         if (recentMaterials.isEmpty() && laborWages.isEmpty()) {
             item {
-                Box(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Belum ada rekap pengeluaran.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.size(44.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Belum ada rekap pengeluaran.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
         }
 
         items(recentMaterials) { mat ->
+            val catColor = getCategoryColor(mat.category)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .background(catColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Inventory2,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = catColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -313,20 +419,25 @@ fun DashboardScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = mat.materialName,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text(
-                            text = "${mat.quantity} ${mat.unit} • ${mat.category} • ${mat.source}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(catColor))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${mat.quantity} ${mat.unit} • ${mat.category}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = formatRupiah(mat.totalCost),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -346,18 +457,20 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .background(SecondaryContainerLight),
                         contentAlignment = Alignment.Center
@@ -372,12 +485,13 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "${wage.workerRole} (${wage.workerCount} org)",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "${wage.workerRole} (${wage.workerCount} orang)",
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = wage.taskDescription.take(28) + if (wage.taskDescription.length > 28) "..." else "",
+                            text = wage.taskDescription.take(32) + if (wage.taskDescription.length > 32) "..." else "",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
@@ -386,7 +500,7 @@ fun DashboardScreen(
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = formatRupiah(wage.totalWage),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = SecondaryLight
                         )

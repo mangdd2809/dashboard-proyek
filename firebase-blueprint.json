@@ -1,0 +1,171 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile in the construction management app",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Google user ID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full display name"
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned role such as Admin, Project Manager, Mandor, Estimator"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number"
+        },
+        "assignedProject": {
+          "type": "string",
+          "description": "Assigned project name or Semua Proyek"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Active status of user"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last update"
+        }
+      },
+      "required": ["userId", "email", "fullName", "role"]
+    },
+    "CloudProject": {
+      "title": "CloudProject",
+      "description": "Construction project record",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Google UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Project title"
+        },
+        "codeSpk": {
+          "type": "string",
+          "description": "SPK Code"
+        },
+        "location": {
+          "type": "string",
+          "description": "Site location"
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Client institution or individual"
+        },
+        "budgetRAB": {
+          "type": "number",
+          "description": "Total RAB budget in IDR"
+        },
+        "progressPercent": {
+          "type": "number",
+          "description": "Current progress percentage (0-100)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Project status (Aktif, Selesai, Ditunda)"
+        },
+        "foremanInCharge": {
+          "type": "string",
+          "description": "Foreman or supervisor in charge"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last modification"
+        }
+      },
+      "required": ["userId", "name", "status"]
+    },
+    "CloudRabItem": {
+      "title": "CloudRabItem",
+      "description": "RAB bill of quantities item",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Google UID"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Associated cloud project ID"
+        },
+        "floorLevel": {
+          "type": "string",
+          "description": "Floor level (e.g. LANTAI 1)"
+        },
+        "categoryCode": {
+          "type": "string",
+          "description": "Category letter code"
+        },
+        "categoryName": {
+          "type": "string",
+          "description": "Category name"
+        },
+        "itemNumber": {
+          "type": "string",
+          "description": "Item number code"
+        },
+        "workDescription": {
+          "type": "string",
+          "description": "Detailed description of work item"
+        },
+        "volume": {
+          "type": "number",
+          "description": "Measured volume"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (m3, m2, m', titik, ls, etc)"
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Unit price in IDR"
+        },
+        "totalPrice": {
+          "type": "number",
+          "description": "Total price in IDR"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of update"
+        }
+      },
+      "required": ["userId", "projectId", "floorLevel", "workDescription"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "User profiles partitioned by Google UID"
+    },
+    "/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/CloudProject"
+      },
+      "description": "Projects authored and owned by authenticated users"
+    },
+    "/rab_items/{rabItemId}": {
+      "schema": {
+        "$ref": "#/entities/CloudRabItem"
+      },
+      "description": "RAB line items associated with projects"
+    }
+  }
+}

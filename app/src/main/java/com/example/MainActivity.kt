@@ -58,13 +58,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Handle back button on sub-screens
+                // Handle back button for secondary screens
                 BackHandler(enabled = currentScreen != AppNavScreen.DASHBOARD) {
                     viewModel.setNavScreen(AppNavScreen.DASHBOARD)
                 }
 
                 Scaffold(
-                    modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     topBar = {
                         TopAppBar(
@@ -95,9 +94,11 @@ class MainActivity : ComponentActivity() {
                                             text = when (currentScreen) {
                                                 AppNavScreen.DASHBOARD -> "Dashboard Realisasi & Progress"
                                                 AppNavScreen.LAPORAN -> "Laporan Pemakaian & Upah"
+                                                AppNavScreen.RAB_EXPLORER -> "RAB Estimate Engineer (EE)"
                                                 AppNavScreen.TELEGRAM_HUB -> "Integrasi Bot Telegram & AI"
                                                 AppNavScreen.AI_ANALYSIS -> "Otak AI Analisis Finansial"
                                                 AppNavScreen.PROYEK -> "Kelola Proyek Pembangunan"
+                                                AppNavScreen.MANAJEMEN_USER -> "Manajemen Pengguna & Tim"
                                                 AppNavScreen.ARMBIAN_SYNC -> "Server Armbian MySQL"
                                             },
                                             style = MaterialTheme.typography.labelSmall,
@@ -108,6 +109,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             actions = {
+                                // User management quick button
+                                IconButton(
+                                    onClick = { viewModel.setNavScreen(AppNavScreen.MANAJEMEN_USER) },
+                                    modifier = Modifier.testTag("top_user_management")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ManageAccounts,
+                                        contentDescription = "Manajemen Pengguna",
+                                        tint = if (currentScreen == AppNavScreen.MANAJEMEN_USER) SafetyAmberDark else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                // Armbian quick button
                                 IconButton(
                                     onClick = { viewModel.setNavScreen(AppNavScreen.ARMBIAN_SYNC) },
                                     modifier = Modifier.testTag("top_armbian_settings")
@@ -136,6 +149,13 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.testTag("nav_dashboard")
                             )
                             NavigationBarItem(
+                                selected = currentScreen == AppNavScreen.RAB_EXPLORER,
+                                onClick = { viewModel.setNavScreen(AppNavScreen.RAB_EXPLORER) },
+                                icon = { Icon(Icons.Default.AccountBalance, contentDescription = "RAB EE") },
+                                label = { Text("RAB EE", fontSize = 10.sp) },
+                                modifier = Modifier.testTag("nav_rab_explorer")
+                            )
+                            NavigationBarItem(
                                 selected = currentScreen == AppNavScreen.LAPORAN,
                                 onClick = { viewModel.setNavScreen(AppNavScreen.LAPORAN) },
                                 icon = { Icon(Icons.Default.Assessment, contentDescription = "Laporan") },
@@ -148,13 +168,6 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Default.SmartToy, contentDescription = "Bot AI") },
                                 label = { Text("Bot AI", fontSize = 10.sp) },
                                 modifier = Modifier.testTag("nav_telegram")
-                            )
-                            NavigationBarItem(
-                                selected = currentScreen == AppNavScreen.AI_ANALYSIS,
-                                onClick = { viewModel.setNavScreen(AppNavScreen.AI_ANALYSIS) },
-                                icon = { Icon(Icons.Default.Psychology, contentDescription = "Analisa") },
-                                label = { Text("Analisa", fontSize = 10.sp) },
-                                modifier = Modifier.testTag("nav_analisa")
                             )
                             NavigationBarItem(
                                 selected = currentScreen == AppNavScreen.PROYEK,
@@ -179,6 +192,9 @@ class MainActivity : ComponentActivity() {
                                     onOpenAddLabor = { showAddLaborDialog = true }
                                 )
                             }
+                            AppNavScreen.RAB_EXPLORER -> {
+                                RabExplorerScreen(viewModel = viewModel)
+                            }
                             AppNavScreen.LAPORAN -> {
                                 PeriodicReportScreen(viewModel = viewModel)
                             }
@@ -190,6 +206,9 @@ class MainActivity : ComponentActivity() {
                             }
                             AppNavScreen.PROYEK -> {
                                 ProjectsManagementScreen(viewModel = viewModel)
+                            }
+                            AppNavScreen.MANAJEMEN_USER -> {
+                                UserManagementScreen(viewModel = viewModel)
                             }
                             AppNavScreen.ARMBIAN_SYNC -> {
                                 ArmbianSyncScreen(viewModel = viewModel)

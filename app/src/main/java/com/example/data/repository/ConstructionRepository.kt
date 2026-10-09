@@ -26,6 +26,8 @@ class ConstructionRepository(context: Context) {
     private val progressDao = db.progressDao()
     private val telegramDao = db.telegramDao()
     private val aiAnalysisDao = db.aiAnalysisDao()
+    private val appUserDao = db.appUserDao()
+    private val rabItemDao = db.rabItemDao()
 
     val geminiService = GeminiService()
     val telegramService = TelegramBotService()
@@ -38,6 +40,27 @@ class ConstructionRepository(context: Context) {
     val allMilestones: Flow<List<ProgressMilestoneEntity>> = progressDao.getAllMilestonesFlow()
     val allTelegramMessages: Flow<List<TelegramMessageEntity>> = telegramDao.getAllMessagesFlow()
     val allAiAnalyses: Flow<List<AIAnalysisEntity>> = aiAnalysisDao.getAllAnalysesFlow()
+    val allUsers: Flow<List<com.example.data.local.entity.AppUserEntity>> = appUserDao.getAllUsersFlow()
+    val allRabItems: Flow<List<com.example.data.local.entity.RabItemEntity>> = rabItemDao.getAllRabItemsFlow()
+
+    fun getRabItemsByProject(projectId: Long): Flow<List<com.example.data.local.entity.RabItemEntity>> =
+        rabItemDao.getRabItemsByProjectFlow(projectId)
+
+    fun getRabItemsByProjectAndFloor(projectId: Long, floor: String): Flow<List<com.example.data.local.entity.RabItemEntity>> =
+        rabItemDao.getRabItemsByProjectAndFloorFlow(projectId, floor)
+
+    // User CRUD
+    suspend fun insertUser(user: com.example.data.local.entity.AppUserEntity): Long = appUserDao.insertUser(user)
+    suspend fun updateUser(user: com.example.data.local.entity.AppUserEntity) = appUserDao.updateUser(user)
+    suspend fun deleteUser(user: com.example.data.local.entity.AppUserEntity) = appUserDao.deleteUser(user)
+
+    // Project CRUD
+    suspend fun deleteProject(project: ProjectEntity) = projectDao.deleteProject(project)
+
+    // RAB CRUD
+    suspend fun insertRabItem(item: com.example.data.local.entity.RabItemEntity): Long = rabItemDao.insertRabItem(item)
+    suspend fun updateRabItem(item: com.example.data.local.entity.RabItemEntity) = rabItemDao.updateRabItem(item)
+    suspend fun deleteRabItem(item: com.example.data.local.entity.RabItemEntity) = rabItemDao.deleteRabItem(item)
 
     fun getMaterialsByProject(projectId: Long): Flow<List<MaterialUsageEntity>> =
         materialDao.getMaterialsByProjectFlow(projectId)
