@@ -1,0 +1,6 @@
+{
+  "name": "Rekap Proyek AI",
+  "description": "Rekap pemakaian material dan upah pekerja proyek pembangunan terintegrasi AI, Telegram Bot, dan server Armbian MySQL.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
