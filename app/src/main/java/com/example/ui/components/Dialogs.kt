@@ -587,3 +587,87 @@ fun ExportReportDialog(
         }
     }
 }
+
+/**
+ * Dialog displaying complete Python server code (app.py) for Armbian
+ */
+@Composable
+fun PythonCodeDialog(
+    pythonCode: String,
+    onDismiss: () -> Unit
+) {
+    val clipboard = LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.88f),
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Kode Server Python (app.py)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                    }
+                }
+
+                Text(
+                    text = "Simpan di Armbian: /opt/rekap_server/app.py lalu jalankan 'python3 app.py'",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F172A))
+                        .padding(12.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = pythonCode,
+                        color = Color(0xFF38BDF8),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = {
+                        clipboard.setText(AnnotatedString(pythonCode))
+                        copied = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = if (copied) Icons.Default.Check else Icons.Default.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (copied) "Kode Python Tersalin!" else "Salin Seluruh Kode Python (app.py)")
+                }
+            }
+        }
+    }
+}
+

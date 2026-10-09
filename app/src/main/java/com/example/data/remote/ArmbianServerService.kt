@@ -242,4 +242,92 @@ CREATE INDEX idx_material_project_date ON `material_usages` (`project_id`, `date
 CREATE INDEX idx_labor_project_date ON `labor_wages` (`project_id`, `date`);
         """.trimIndent()
     }
+
+    /**
+     * Generates complete Python Flask REST API server script for Armbian
+     */
+    fun generatePythonServerCode(): String {
+        return """
+# ========================================================
+# REKAP PROYEK AI - ARMBIAN PYTHON SERVER (app.py)
+# ========================================================
+# Jalankan di terminal Armbian:
+#   sudo apt install -y python3-pip mariadb-server
+#   pip install flask pymysql requests python-dotenv
+#   python3 app.py
+# ========================================================
+
+from flask import Flask, request, jsonify
+import pymysql
+from pymysql.cursors import DictCursor
+import os, time, sys
+
+app = Flask(__name__)
+
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
+MYSQL_USER = os.environ.get("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
+MYSQL_DB = os.environ.get("MYSQL_DB", "db_rekap_konstruksi")
+API_KEY = os.environ.get("API_KEY", "armbian_secret_token_2026")
+
+def get_db():
+    return pymysql.connect(
+        host=MYSQL_HOST, user=MYSQL_USER, password=MYSQL_PASSWORD,
+        database=MYSQL_DB, charset="utf8mb4", cursorclass=DictCursor, autocommit=True
+    )
+
+@app.route("/ping", methods=["GET"])
+def ping():
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM projects")
+            cnt = cur.fetchone()["total"]
+        conn.close()
+        return jsonify({
+            "status": "online",
+            "server": "Armbian Linux SBC",
+            "python": sys.version.split()[0],
+            "mysql": "connected",
+            "total_projects": cnt
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "mysql": str(e)}), 500
+
+@app.route("/sync", methods=["POST"])
+def sync():
+    key = request.headers.get("X-API-Key", "")
+    if key != API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json or {}
+    conn = get_db()
+    with conn.cursor() as cur:
+        for p in data.get("projects", []):
+            cur.execute('''
+                INSERT INTO projects (id, name, code_spk, location, budget_rab, progress_percent, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE name=VALUES(name), progress_percent=VALUES(progress_percent)
+            ''', (p.get("id"), p.get("name"), p.get("code_spk"), p.get("location"), p.get("budget_rab"), p.get("progress_percent"), p.get("status")))
+
+        for m in data.get("materials", []):
+            cur.execute('''
+                INSERT INTO material_usages (id, project_id, date, material_name, category, quantity, unit, unit_price, total_cost, source)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE quantity=VALUES(quantity), total_cost=VALUES(total_cost)
+            ''', (m.get("id"), m.get("project_id"), m.get("date"), m.get("material_name"), m.get("category"), m.get("quantity"), m.get("unit"), m.get("unit_price"), m.get("total_cost"), m.get("source")))
+
+        for w in data.get("wages", []):
+            cur.execute('''
+                INSERT INTO labor_wages (id, project_id, date, worker_role, worker_count, duration_hok, wage_rate, total_wage, task_description, source)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE worker_count=VALUES(worker_count), total_wage=VALUES(total_wage)
+            ''', (w.get("id"), w.get("project_id"), w.get("date"), w.get("worker_role"), w.get("worker_count"), w.get("duration_hok"), w.get("wage_rate"), w.get("total_wage"), w.get("task_description"), w.get("source")))
+    conn.close()
+    return jsonify({"success": True, "message": "Data berhasil tersinkron ke MySQL Armbian!"})
+
+if __name__ == "__main__":
+    print("🚀 Server Armbian berjalan di http://0.0.0.0:8000")
+    app.run(host="0.0.0.0", port=8000)
+        """.trimIndent()
+    }
 }

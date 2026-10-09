@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.remote.ArmbianServerConfig
+import com.example.ui.components.PythonCodeDialog
 import com.example.ui.components.SqlSchemaDialog
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.ProjectViewModel
@@ -38,6 +39,7 @@ fun ArmbianSyncScreen(
     var tempChatId by remember { mutableStateOf(chatId) }
 
     var showSqlDialog by remember { mutableStateOf(false) }
+    var showPythonDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
@@ -169,6 +171,19 @@ fun ArmbianSyncScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Lihat Skrip DDL MySQL Armbian (.sql)")
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FilledTonalButton(
+                        onClick = { showPythonDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Code, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Lihat Kode Server Python Armbian (app.py)")
+                    }
                 }
             }
         }
@@ -270,6 +285,14 @@ fun ArmbianSyncScreen(
         SqlSchemaDialog(
             sqlContent = schema,
             onDismiss = { showSqlDialog = false }
+        )
+    }
+
+    if (showPythonDialog) {
+        val pyCode = viewModel.repository.armbianService.generatePythonServerCode()
+        PythonCodeDialog(
+            pythonCode = pyCode,
+            onDismiss = { showPythonDialog = false }
         )
     }
 }
